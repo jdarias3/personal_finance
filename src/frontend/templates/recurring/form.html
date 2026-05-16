@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit Recurring' if recurring else 'Add Recurring Transaction' }} - Clarity{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2rem 1rem;">
+    <div class="page-header">
+        <h1 class="page-title">{{ 'Edit Recurring' if recurring else 'Add Recurring Transaction' }}</h1>
+    </div>
+    
+    <div class="card" style="max-width: 500px;">
+        <form action="{{ '/recurring/' + recurring.id + '/edit' if recurring else '/recurring/new' }}" method="post">
+            <div class="form-group">
+                <label class="form-label" for="account_id">Account</label>
+                <select id="account_id" name="account_id" class="form-select" required>
+                    {% for account in accounts %}
+                    <option value="{{ account.id }}" {% if recurring and recurring.account_id == account.id %}selected{% endif %}>{{ account.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="description">Description</label>
+                <input type="text" id="description" name="description" class="form-input" 
+                       value="{{ recurring.description if recurring else '' }}" required
+                       placeholder="e.g., Monthly Rent">
+            </div>
+            
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label class="form-label" for="amount">Amount</label>
+                    <input type="number" id="amount" name="amount" class="form-input" 
+                           step="0.01" min="0.01" value="{{ (recurring.amount_cents / 100) if recurring else '' }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="transaction_type">Type</label>
+                    <select id="transaction_type" name="transaction_type" class="form-select" required>
+                        <option value="outflow" {% if recurring and recurring.amount_cents < 0 %}selected{% endif %}>Expense</option>
+                        <option value="inflow" {% if recurring and recurring.amount_cents > 0 %}selected{% endif %}>Income</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="recurrence_pattern">Frequency</label>
+                <select id="recurrence_pattern" name="recurrence_pattern" class="form-select" required>
+                    <option value="weekly" {% if recurring and recurring.recurrence_pattern == 'weekly' %}selected{% endif %}>Weekly</option>
+                    <option value="biweekly" {% if recurring and recurring.recurrence_pattern == 'biweekly' %}selected{% endif %}>Bi-weekly</option>
+                    <option value="monthly" {% if recurring and recurring.recurrence_pattern == 'monthly' %}selected{% endif %}>Monthly</option>
+                    <option value="yearly" {% if recurring and recurring.recurrence_pattern == 'yearly' %}selected{% endif %}>Yearly</option>
+                </select>
+            </div>
+            
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label class="form-label" for="start_date">Start Date</label>
+                    <input type="date" id="start_date" name="start_date" class="form-input" 
+                           value="{{ recurring.start_date if recurring else today }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="end_date">End Date (optional)</label>
+                    <input type="date" id="end_date" name="end_date" class="form-input" 
+                           value="{{ recurring.end_date if recurring else '' }}">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="payee">Payee (optional)</label>
+                <input type="text" id="payee" name="payee" class="form-input" 
+                       value="{{ recurring.payee if recurring else '' }}"
+                       placeholder="e.g., Netflix, Landlord">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="category_id">Category</label>
+                <select id="category_id" name="category_id" class="form-select">
+                    <option value="">Uncategorized</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if recurring and recurring.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-primary">
+                    {{ 'Save Changes' if recurring else 'Add Recurring' }}
+                </button>
+                <a href="/forecast" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

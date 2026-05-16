@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Transactions - Clarity{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2rem 1rem;">
+    <div class="page-header">
+        <h1 class="page-title">Transactions</h1>
+        <div style="display: flex; gap: 0.75rem;">
+            <button class="btn btn-secondary" onclick="document.getElementById('import-form').classList.toggle('hidden')">
+                Import CSV
+            </button>
+            <a href="/transactions/new" class="btn btn-primary">+ Add Transaction</a>
+        </div>
+    </div>
+    
+    <div id="import-form" class="card hidden" style="margin-bottom: 1.5rem; display: none;">
+        <h3 style="margin: 0 0 1rem;">Import Transactions</h3>
+        <form action="/transactions/import" method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <label class="form-label" for="account_id">Account</label>
+                <select id="account_id" name="account_id" class="form-select" required>
+                    {% for account in accounts %}
+                    <option value="{{ account.id }}">{{ account.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="file">CSV File</label>
+                <input type="file" id="file" name="file" accept=".csv" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Import</button>
+        </form>
+    </div>
+    
+    <div class="card" style="margin-bottom: 1.5rem; padding: 1rem;">
+        <form action="/transactions" method="get" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+            <div class="form-group" style="margin: 0;">
+                <label class="form-label" for="start_date">From</label>
+                <input type="date" id="start_date" name="start_date" class="form-input" value="{{ start_date }}">
+            </div>
+            <div class="form-group" style="margin: 0;">
+                <label class="form-label" for="end_date">To</label>
+                <input type="date" id="end_date" name="end_date" class="form-input" value="{{ end_date }}">
+            </div>
+            <div class="form-group" style="margin: 0;">
+                <label class="form-label" for="account_filter">Account</label>
+                <select id="account_filter" name="account_id" class="form-select">
+                    <option value="">All Accounts</option>
+                    {% for account in accounts %}
+                    <option value="{{ account.id }}" {% if current_account == account.id %}selected{% endif %}>{{ account.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-secondary">Filter</button>
+            <a href="/transactions" class="btn btn-ghost">Clear</a>
+        </form>
+    </div>
+    
+    {% if transactions %}
+    <div class="card">
+        {% for date, txns in transactions_by_date.items() %}
+        <div style="padding: 1rem 0; border-bottom: 1px solid var(--border);">
+            <div style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 0.75rem;">{{ date | format_date }}</div>
+            {% for txn in txns %}
+            <div class="list-item" style="padding: 0.5rem 0;">
+                <div style="flex: 1;">
+                    <div style="font-weight: 500;">{{ txn.description }}</div>
+                    <div style="font-size: 0.8125rem; color: var(--text-muted);">
+                        {{ txn.payee or '' }}{% if txn.category %} · {{ txn.category }}{% endif %}
+                    </div>
+                </div>
+                <div class="transaction-amount {{ txn.transaction_type }}">
+                    {% if txn.transaction_type == 'inflow' %}+{% else %}-{% endif %}{{ txn.amount_cents | cents_to_dollars }}
+                </div>
+                <div style="margin-left: 0.5rem;">
+                    <a href="/transactions/{{ txn.id }}/edit" class="btn btn-ghost" style="padding: 0.375rem;">Edit</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+        
+        {% if pagination.has_next %}
+        <div style="text-align: center; padding: 1rem;">
+            <a href="?page={{ pagination.next_page }}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if current_account %}&account_id={{ current_account }}{% endif %}" 
+               class="btn btn-secondary" hx-boost="true" hx-target="#transactions-list" hx-swap="innerHTML">
+                Load More
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="empty-state">
+            <h3>No transactions found</h3>
+            <p>Add transactions manually or import from your bank.</p>
+            <div style="display: flex; gap: 0.75rem; justify-content: center; margin-top: 1rem;">
+                <a href="/transactions/new" class="btn btn-primary">Add Transaction</a>
+                <button onclick="document.getElementById('import-form').style.display='block'" class="btn btn-secondary">Import CSV</button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

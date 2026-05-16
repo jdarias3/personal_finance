@@ -1,0 +1,18 @@
+<nav class="nav">
+    <div class="container nav-inner">
+        <a href="/" class="nav-brand">Clarity</a>
+        <div class="nav-links">
+            <a href="/dashboard" class="nav-link {% if request.path == '/dashboard' %}active{% endif %}">Dashboard</a>
+            <a href="/accounts" class="nav-link {% if request.path.startswith('/accounts') %}active{% endif %}">Accounts</a>
+            <a href="/transactions" class="nav-link {% if request.path.startswith('/transactions') %}active{% endif %}">Transactions</a>
+            <a href="/debts" class="nav-link {% if request.path.startswith('/debts') %}active{% endif %}">Debts</a>
+            <a href="/forecast" class="nav-link {% if request.path == '/forecast' %}active{% endif %}">Forecast</a>
+        </div>
+        <div class="nav-links">
+            <a href="/settings" class="nav-link">Settings</a>
+            <form action="/auth/logout" method="post" style="display: inline;">
+                <button type="submit" class="btn btn-ghost">Logout</button>
+            </form>
+        </div>
+    </div>
+</nav>

@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Cash Flow Forecast - Clarity{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2rem 1rem;">
+    <div class="page-header">
+        <h1 class="page-title">Cash Flow Forecast</h1>
+    </div>
+    
+    <div class="grid grid-3" style="margin-bottom: 2rem;">
+        <div class="card stat-card">
+            <div class="stat-label">Current Balance</div>
+            <div class="stat-value {% if safe_to_spend.current_balance_cents >= 0 %}positive{% else %}negative{% endif %}">
+                {{ safe_to_spend.current_balance_cents | cents_to_dollars }}
+            </div>
+        </div>
+        <div class="card stat-card">
+            <div class="stat-label">Safe to Spend</div>
+            <div class="stat-value positive">{{ safe_to_spend.safe_to_spend_cents | cents_to_dollars }}</div>
+        </div>
+        <div class="card stat-card">
+            <div class="stat-label">Upcoming Bills (30d)</div>
+            <div class="stat-value negative">{{ safe_to_spend.upcoming_bills_cents | cents_to_dollars }}</div>
+        </div>
+    </div>
+    
+    {% if safe_to_spend.days_until_low_balance %}
+    <div class="alert alert-warning" style="margin-bottom: 2rem;">
+        <div>
+            <strong>Low balance warning:</strong> Based on your recurring transactions, your balance may drop below threshold in 
+            {{ safe_to_spend.days_until_low_balance }} days.
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="grid grid-2" style="margin-bottom: 2rem;">
+        <div class="card">
+            <h2 style="font-size: 1.125rem; margin: 0 0 1rem;">30-Day Projection</h2>
+            
+            {% if projections %}
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--border);">
+                            <th style="text-align: left; padding: 0.75rem; color: var(--text-muted);">Date</th>
+                            <th style="text-align: right; padding: 0.75rem; color: var(--text-muted);">In</th>
+                            <th style="text-align: right; padding: 0.75rem; color: var(--text-muted);">Out</th>
+                            <th style="text-align: right; padding: 0.75rem; color: var(--text-muted);">Net</th>
+                            <th style="text-align: right; padding: 0.75rem; color: var(--text-muted);">Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for proj in projections if proj.net_cents != 0 %}
+                        <tr style="border-bottom: 1px solid var(--border); {% if proj.projected_balance_cents < 0 %}background: var(--danger-muted);{% endif %}">
+                            <td style="padding: 0.75rem;">{{ proj.date | format_date }}</td>
+                            <td style="text-align: right; padding: 0.75rem; color: var(--success);">{% if proj.inflows_cents > 0 %}+{{ proj.inflows_cents | cents_to_dollars }}{% endif %}</td>
+                            <td style="text-align: right; padding: 0.75rem; color: var(--danger);">{% if proj.outflows_cents > 0 %}-{{ proj.outflows_cents | cents_to_dollars }}{% endif %}</td>
+                            <td style="text-align: right; padding: 0.75rem; {% if proj.net_cents >= 0 %}color: var(--success);{% else %}color: var(--danger);{% endif %}">
+                                {% if proj.net_cents >= 0 %}+{% else %}{% endif %}{{ proj.net_cents | cents_to_dollars }}
+                            </td>
+                            <td style="text-align: right; padding: 0.75rem; {% if proj.projected_balance_cents < 0 %}color: var(--danger); font-weight: 600;{% endif %}">
+                                {{ proj.projected_balance_cents | cents_to_dollars }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p style="color: var(--text-muted);">No recurring transactions to project. Add recurring transactions to see your forecast.</p>
+            {% endif %}
+        </div>
+        
+        <div class="card">
+            <h2 style="font-size: 1.125rem; margin: 0 0 1rem;">Upcoming Bills</h2>
+            
+            {% if upcoming_bills %}
+            {% for bill in upcoming_bills %}
+            <div class="list-item" style="border-bottom: 1px solid var(--border);">
+                <div style="flex: 1;">
+                    <div style="font-weight: 500;">{{ bill.description }}</div>
+                    <div style="font-size: 0.8125rem; color: var(--text-muted);">{{ bill.date | format_date }}{% if bill.payee %} · {{ bill.payee }}{% endif %}</div>
+                </div>
+                <div class="transaction-amount outflow">
+                    -{{ bill.amount_cents | cents_to_dollars }}
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p style="color: var(--text-muted);">No upcoming bills detected.</p>
+            {% endif %}
+            
+            <div style="margin-top: 1.5rem;">
+                <a href="/recurring/new" class="btn btn-secondary">+ Add Recurring Transaction</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

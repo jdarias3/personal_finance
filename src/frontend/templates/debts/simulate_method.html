@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Snowball' if method == 'snowball' else 'Avalanche' }} Simulation - Clarity{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2rem 1rem;">
+    <div class="page-header">
+        <h1 class="page-title">{{ 'Snowball' if method == 'snowball' else 'Avalanche' }} Debt Payoff Simulation</h1>
+        <a href="/debts" class="btn btn-secondary">← Back to Debts</a>
+    </div>
+    
+    <div class="card" style="margin-bottom: 2rem;">
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+            {% if method == 'snowball' %}
+            The <strong>Snowball Method</strong> pays off debts from smallest to largest balance. 
+            Quick wins build momentum and motivation.
+            {% else %}
+            The <strong>Avalanche Method</strong> pays off debts from highest to lowest interest rate. 
+            Saves the most money on interest.
+            {% endif %}
+        </p>
+    </div>
+    
+    <div class="card">
+        <h2 style="font-size: 1.125rem; margin: 0 0 1rem;">Payoff Order</h2>
+        
+        {% if projections %}
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <th style="text-align: left; padding: 0.75rem;">#</th>
+                    <th style="text-align: left; padding: 0.75rem;">Debt</th>
+                    <th style="text-align: right; padding: 0.75rem;">Months to Payoff</th>
+                    <th style="text-align: right; padding: 0.75rem;">Total Interest</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for proj in projections %}
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.75rem;">{{ loop.index }}</td>
+                    <td style="padding: 0.75rem;">{{ proj.name }}</td>
+                    <td style="text-align: right; padding: 0.75rem;">{{ proj.months_to_payoff }}</td>
+                    <td style="text-align: right; padding: 0.75rem;">{{ proj.total_interest_cents | cents_to_dollars }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color: var(--text-muted);">No debts to simulate. Add debts first.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

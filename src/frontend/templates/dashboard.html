@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Clarity{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2rem 1rem;">
+    <div class="page-header">
+        <h1 class="page-title">Your Financial Overview</h1>
+        <a href="/accounts/new" class="btn btn-primary">+ Add Account</a>
+    </div>
+    
+    <div class="grid grid-4" style="margin-bottom: 2rem;">
+        <div class="card stat-card">
+            <div class="stat-label">Total Balance</div>
+            <div class="stat-value {% if net_worth >= 0 %}positive{% else %}negative{% endif %}">
+                {{ net_worth | cents_to_dollars }}
+            </div>
+        </div>
+        <div class="card stat-card">
+            <div class="stat-label">Safe to Spend</div>
+            <div class="stat-value positive">
+                {{ safe_to_spend | cents_to_dollars }}
+            </div>
+        </div>
+        <div class="card stat-card">
+            <div class="stat-label">This Month In</div>
+            <div class="stat-value positive">
+                {{ monthly_inflow | cents_to_dollars }}
+            </div>
+        </div>
+        <div class="card stat-card">
+            <div class="stat-label">This Month Out</div>
+            <div class="stat-value negative">
+                {{ monthly_outflow | cents_to_dollars }}
+            </div>
+        </div>
+    </div>
+    
+    <div class="grid grid-2" style="margin-bottom: 2rem;">
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 style="font-size: 1.125rem; margin: 0;">Accounts</h2>
+                <a href="/accounts" class="btn btn-ghost">View All</a>
+            </div>
+            
+            {% if accounts %}
+            {% for account in accounts %}
+            <div class="list-item" style="padding: 0.75rem 0; border-bottom: 1px solid var(--border);">
+                <div style="flex: 1;">
+                    <div style="font-weight: 500;">{{ account.name }}</div>
+                    <div style="font-size: 0.8125rem; color: var(--text-muted);">{{ account.institution or account.account_type }}</div>
+                </div>
+                <div class="transaction-amount {% if account.balance >= 0 %}positive{% else %}outflow{% endif %}">
+                    {{ account.balance | cents_to_dollars }}
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state" style="padding: 2rem;">
+                <p>No accounts yet. Add your first account to get started.</p>
+                <a href="/accounts/new" class="btn btn-secondary">Add Account</a>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 style="font-size: 1.125rem; margin: 0;">Upcoming Bills</h2>
+                <a href="/forecast" class="btn btn-ghost">Forecast</a>
+            </div>
+            
+            {% if upcoming_bills %}
+            {% for bill in upcoming_bills[:5] %}
+            <div class="list-item" style="padding: 0.75rem 0; border-bottom: 1px solid var(--border);">
+                <div style="flex: 1;">
+                    <div style="font-weight: 500;">{{ bill.description }}</div>
+                    <div style="font-size: 0.8125rem; color: var(--text-muted);">{{ bill.date | format_date }}</div>
+                </div>
+                <div class="transaction-amount outflow">
+                    -{{ bill.amount_cents | cents_to_dollars }}
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state" style="padding: 2rem;">
+                <p>No upcoming bills detected. Add recurring transactions to see them here.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="grid grid-2">
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 style="font-size: 1.125rem; margin: 0;">Recent Transactions</h2>
+                <a href="/transactions" class="btn btn-ghost">View All</a>
+            </div>
+            
+            {% if recent_transactions %}
+            {% for txn in recent_transactions %}
+            <div class="list-item" style="padding: 0.75rem 0; border-bottom: 1px solid var(--border);">
+                <div style="flex: 1;">
+                    <div style="font-weight: 500;">{{ txn.description }}</div>
+                    <div style="font-size: 0.8125rem; color: var(--text-muted);">{{ txn.date | format_date }}{% if txn.category %} · {{ txn.category }}{% endif %}</div>
+                </div>
+                <div class="transaction-amount {{ txn.transaction_type }}">
+                    {% if txn.transaction_type == 'inflow' %}+{% else %}-{% endif %}{{ txn.amount_cents | cents_to_dollars }}
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state" style="padding: 2rem;">
+                <p>No transactions yet.</p>
+                <a href="/transactions/new" class="btn btn-secondary">Add Transaction</a>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="card">
+            <h2 style="font-size: 1.125rem; margin: 0 0 1rem;">AI Insights</h2>
+            
+            {% if insights %}
+            {% for insight in insights %}
+            <div class="alert {% if insight.type == 'warning' %}alert-warning{% elif insight.type == 'danger' %}alert-danger{% else %}alert-success{% endif %}">
+                <div>{{ insight.message }}</div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state" style="padding: 2rem;">
+                <p>Add more transactions to receive personalized insights.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

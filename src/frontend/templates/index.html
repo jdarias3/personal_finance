@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome to Clarity{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <h1>Financial clarity, emotional safety</h1>
+    <p>Your AI-powered personal finance operating system. Understand your money, predict your future, eliminate debt.</p>
+    
+    {% if not user %}
+    <div class="grid grid-2" style="max-width: 600px; margin: 0 auto;">
+        <div class="card">
+            <h2 style="font-size: 1.25rem; margin: 0 0 0.5rem;">Sign In</h2>
+            <form action="/auth/login" method="post">
+                <div class="form-group">
+                    <label class="form-label" for="email">Email</label>
+                    <input type="email" id="email" name="email" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <input type="password" id="password" name="password" class="form-input" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
+            </form>
+        </div>
+        
+        <div class="card">
+            <h2 style="font-size: 1.25rem; margin: 0 0 0.5rem;">Create Account</h2>
+            <form action="/auth/register" method="post">
+                <div class="form-group">
+                    <label class="form-label" for="name">Full Name</label>
+                    <input type="text" id="name" name="name" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="reg-email">Email</label>
+                    <input type="email" id="reg-email" name="email" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="reg-password">Password</label>
+                    <input type="password" id="reg-password" name="password" class="form-input" required minlength="8">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Get Started</button>
+            </form>
+        </div>
+    </div>
+    {% else %}
+    <div style="text-align: center; margin-top: 2rem;">
+        <a href="/dashboard" class="btn btn-primary">Go to Dashboard</a>
+    </div>
+    {% endif %}
+</div>
+
+<section style="padding: 3rem 0;">
+    <div class="container">
+        <div class="grid grid-3">
+            <div class="card stat-card">
+                <h3 style="font-size: 1rem; color: var(--text-secondary); margin: 0 0 0.5rem;">AI Financial Advisor</h3>
+                <p style="color: var(--text-muted); font-size: 0.9375rem;">Get personalized insights and recommendations without the stress.</p>
+            </div>
+            <div class="card stat-card">
+                <h3 style="font-size: 1rem; color: var(--text-secondary); margin: 0 0 0.5rem;">Debt Elimination</h3>
+                <p style="color: var(--text-muted); font-size: 0.9375rem;">Snowball or avalanche your way to financial freedom.</p>
+            </div>
+            <div class="card stat-card">
+                <h3 style="font-size: 1rem; color: var(--text-secondary); margin: 0 0 0.5rem;">Cash Flow Prediction</h3>
+                <p style="color: var(--text-muted); font-size: 0.9375rem;">Know your safe-to-spend before you spend it.</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

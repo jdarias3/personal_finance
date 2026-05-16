@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get Started - Clarity</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="container" style="padding: 3rem 1rem;">
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <h1 style="font-size: 2rem; margin: 0 0 0.5rem;">Let's set up your financial workspace</h1>
+            <p style="color: var(--text-secondary);">Choose a mode that fits your current priorities.</p>
+        </div>
+        
+        <form action="/onboarding/profile" method="post" style="max-width: 600px; margin: 0 auto;">
+            <div class="card" style="margin-bottom: 1rem;">
+                <h2 style="font-size: 1.125rem; margin: 0 0 1rem;">Select Your Primary Mode</h2>
+                
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <label style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s;">
+                        <input type="radio" name="profile_mode" value="financial-os" checked style="width: 18px; height: 18px;">
+                        <div>
+                            <div style="font-weight: 500;">AI Financial OS</div>
+                            <div style="font-size: 0.8125rem; color: var(--text-muted);">Complete financial overview with AI insights</div>
+                        </div>
+                    </label>
+                    
+                    <label style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s;">
+                        <input type="radio" name="profile_mode" value="cash-flow" style="width: 18px; height: 18px;">
+                        <div>
+                            <div style="font-weight: 500;">Cash Flow Focus</div>
+                            <div style="font-size: 0.8125rem; color: var(--text-muted);">Predict your balance and plan for expenses</div>
+                        </div>
+                    </label>
+                    
+                    <label style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s;">
+                        <input type="radio" name="profile_mode" value="debt-free" style="width: 18px; height: 18px;">
+                        <div>
+                            <div style="font-weight: 500;">Debt Elimination</div>
+                            <div style="font-size: 0.8125rem; color: var(--text-muted);">Snowball or avalanche your way to freedom</div>
+                        </div>
+                    </label>
+                    
+                    <label style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s;">
+                        <input type="radio" name="profile_mode" value="family" style="width: 18px; height: 18px;">
+                        <div>
+                            <div style="font-weight: 500;">Family Coordination</div>
+                            <div style="font-size: 0.8125rem; color: var(--text-muted);">Manage household finances together</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="card" style="margin-bottom: 1rem;">
+                <h2 style="font-size: 1.125rem; margin: 0 0 1rem;">Your Preferences</h2>
+                
+                <div class="form-group">
+                    <label class="form-label" for="cash_buffer">Cash Buffer (emergency fund)</label>
+                    <input type="number" id="cash_buffer" name="cash_buffer" class="form-input" step="1" min="0" placeholder="1000">
+                    <small style="color: var(--text-muted);">Amount to keep aside for emergencies</small>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="low_balance_threshold">Low Balance Alert Threshold</label>
+                    <input type="number" id="low_balance_threshold" name="low_balance_threshold" class="form-input" step="1" min="0" placeholder="500">
+                    <small style="color: var(--text-muted);">Get notified when balance drops below this</small>
+                </div>
+            </div>
+            
+            <div style="text-align: center;">
+                <button type="submit" class="btn btn-primary" style="padding: 0.875rem 2rem; font-size: 1rem;">
+                    Continue to Dashboard →
+                </button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

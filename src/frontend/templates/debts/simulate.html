@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Payoff Simulation - Clarity{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2rem 1rem;">
+    <div class="page-header">
+        <h1 class="page-title">Payoff Projection: {{ debt.name }}</h1>
+        <a href="/debts" class="btn btn-secondary">← Back to Debts</a>
+    </div>
+    
+    <div class="grid grid-3" style="margin-bottom: 2rem;">
+        <div class="card stat-card">
+            <div class="stat-label">Current Balance</div>
+            <div class="stat-value negative">{{ debt.current_balance_cents | cents_to_dollars }}</div>
+        </div>
+        <div class="card stat-card">
+            <div class="stat-label">Interest Rate</div>
+            <div class="stat-value">{{ debt.interest_rate | divide_by_100 }}%</div>
+        </div>
+        <div class="card stat-card">
+            <div class="stat-label">Min Payment</div>
+            <div class="stat-value">{{ debt.minimum_payment_cents | cents_to_dollars }}/mo</div>
+        </div>
+    </div>
+    
+    <div class="card" style="margin-bottom: 2rem;">
+        <h2 style="font-size: 1.125rem; margin: 0 0 1rem;">Adjust Payment Amount</h2>
+        
+        <form hx-post="/debts/{{ debt.id }}/project"
+              hx-target="#projection-results"
+              hx-swap="innerHTML"
+              hx-indicator="#loading"
+              hx-on::before-request="console.log('Before request:', event)"
+              hx-on::after-request="console.log('After request:', event)">
+            <div style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+                <div class="form-group" style="margin: 0;">
+                    <label class="form-label" for="monthly_payment">Monthly Payment</label>
+                    <input type="number" id="monthly_payment" name="monthly_payment" class="form-input"
+                           step="0.01" value="{{ (debt.minimum_payment_cents / 100) | int }}">
+                </div>
+                <div class="form-group" style="margin: 0;">
+                    <label class="form-label" for="extra_payment">Extra Payment</label>
+                    <input type="number" id="extra_payment" name="extra_payment" class="form-input"
+                           step="0.01" value="0" min="0">
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    Recalculate
+                    <span id="loading" class="htmx-indicator">...</span>
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <div id="projection-results" hx-trigger="every 5s">
+        <div class="card" style="background: #f0f0f0; padding: 1rem; margin-bottom: 1rem;">
+            <pre id="debug-info" style="font-size: 0.75rem; background: #333; color: #0f0; padding: 0.5rem; border-radius: 4px;">Debug: waiting for recalculation...</pre>
+        </div>
+        <div class="grid grid-2" style="margin-bottom: 2rem;">
+            <div class="card stat-card">
+                <div class="stat-label">Months to Payoff</div>
+                <div class="stat-value">{{ projection.months_to_payoff }}</div>
+                <div style="font-size: 0.875rem; color: var(--text-muted);">{{ projection.payoff_date | format_date }}</div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-label">Total Interest</div>
+                <div class="stat-value negative">{{ projection.total_interest_cents | cents_to_dollars }}</div>
+                <div class="stat-change down">of {{ projection.total_cost_cents | cents_to_dollars }} total</div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2 style="font-size: 1.125rem; margin: 0 0 1rem;">Payment Schedule</h2>
+            
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--border);">
+                            <th style="text-align: left; padding: 0.75rem; color: var(--text-muted);">Month</th>
+                            <th style="text-align: right; padding: 0.75rem; color: var(--text-muted);">Payment</th>
+                            <th style="text-align: right; padding: 0.75rem; color: var(--text-muted);">Principal</th>
+                            <th style="text-align: right; padding: 0.75rem; color: var(--text-muted);">Interest</th>
+                            <th style="text-align: right; padding: 0.75rem; color: var(--text-muted);">Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in projection.monthly_schedule[:12] %}
+                        <tr style="border-bottom: 1px solid var(--border);">
+                            <td style="padding: 0.75rem;">{{ payment.month }}</td>
+                            <td style="text-align: right; padding: 0.75rem;">{{ payment.payment_cents | cents_to_dollars }}</td>
+                            <td style="text-align: right; padding: 0.75rem; color: var(--success);">{{ payment.principal_cents | cents_to_dollars }}</td>
+                            <td style="text-align: right; padding: 0.75rem; color: var(--danger);">{{ payment.interest_cents | cents_to_dollars }}</td>
+                            <td style="text-align: right; padding: 0.75rem;">{{ payment.balance_cents | cents_to_dollars }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% if projection.monthly_schedule | length > 12 %}
+            <p style="text-align: center; color: var(--text-muted); font-size: 0.875rem; margin-top: 1rem;">
+                Showing first 12 months. Full schedule has {{ projection.monthly_schedule | length }} months.
+            </p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

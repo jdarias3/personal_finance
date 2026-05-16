@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Add Account - Clarity{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2rem 1rem;">
+    <div class="page-header">
+        <h1 class="page-title">{{ 'Edit Account' if account else 'Add Account' }}</h1>
+    </div>
+    
+    <div class="card" style="max-width: 500px;">
+        <form action="{{ '/accounts/' + account.id + '/edit' if account else '/accounts/new' }}" method="post">
+            <div class="form-group">
+                <label class="form-label" for="name">Account Name</label>
+                <input type="text" id="name" name="name" class="form-input" 
+                       value="{{ account.name if account else '' }}" required 
+                       placeholder="e.g., Main Checking">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="account_type">Account Type</label>
+                <select id="account_type" name="account_type" class="form-select" required>
+                    <option value="">Select type...</option>
+                    <option value="checking" {% if account and account.account_type == 'checking' %}selected{% endif %}>Checking</option>
+                    <option value="savings" {% if account and account.account_type == 'savings' %}selected{% endif %}>Savings</option>
+                    <option value="credit" {% if account and account.account_type == 'credit' %}selected{% endif %}>Credit Card</option>
+                    <option value="loan" {% if account and account.account_type == 'loan' %}selected{% endif %}>Loan</option>
+                    <option value="cash" {% if account and account.account_type == 'cash' %}selected{% endif %}>Cash</option>
+                    <option value="investment" {% if account and account.account_type == 'investment' %}selected{% endif %}>Investment</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="institution">Institution (optional)</label>
+                <input type="text" id="institution" name="institution" class="form-input" 
+                       value="{{ account.institution if account else '' }}"
+                       placeholder="e.g., Chase, Bank of America">
+            </div>
+            
+            {% if account %}
+            <div class="form-group">
+                <label class="form-label" for="initial_balance">Current Balance</label>
+                <input type="number" id="initial_balance" name="initial_balance" class="form-input"
+                       step="0.01" placeholder="0.00">
+                <small style="color: var(--text-muted);">Add a transaction to adjust balance</small>
+            </div>
+            {% endif %}
+            
+            <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-primary">
+                    {{ 'Save Changes' if account else 'Add Account' }}
+                </button>
+                <a href="/accounts" class="btn btn-secondary">Cancel</a>
+                {% if account %}
+                <a href="/accounts/{{ account.id }}/delete" class="btn btn-danger" 
+                   onclick="return confirm('Are you sure? This will delete all transactions.')">Delete</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

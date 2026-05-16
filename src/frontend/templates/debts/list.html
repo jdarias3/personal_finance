@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Debts - Clarity{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2rem 1rem;">
+    <div class="page-header">
+        <h1 class="page-title">Debt Elimination</h1>
+        <a href="/debts/new" class="btn btn-primary">+ Add Debt</a>
+    </div>
+    
+    <div class="grid grid-3" style="margin-bottom: 2rem;">
+        <div class="card stat-card">
+            <div class="stat-label">Total Debt</div>
+            <div class="stat-value negative">{{ summary.total_debt_cents | cents_to_dollars }}</div>
+        </div>
+        <div class="card stat-card">
+            <div class="stat-label">Monthly Payment</div>
+            <div class="stat-value">{{ summary.total_minimum_payment_cents | cents_to_dollars }}</div>
+        </div>
+        <div class="card stat-card">
+            <div class="stat-label">Avg Interest Rate</div>
+            <div class="stat-value">{{ summary.weighted_avg_rate | divide_by_100 }}%</div>
+        </div>
+    </div>
+    
+    {% if debts %}
+    <div class="card" style="margin-bottom: 2rem;">
+        <h2 style="font-size: 1.125rem; margin: 0 0 1rem;">Your Debts</h2>
+        
+        {% for debt in debts %}
+        <div class="list-item" style="border-bottom: 1px solid var(--border);">
+            <div style="flex: 1;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div style="width: 40px; height: 40px; background: var(--danger-muted); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; color: var(--danger);">
+                        {% if debt.name.lower().find('credit') != -1 %}💳{% elif debt.name.lower().find('mortgage') != -1 %}🏠{% elif debt.name.lower().find('auto') != -1 %}🚗{% else %}💰{% endif %}
+                    </div>
+                    <div>
+                        <div style="font-weight: 500;">{{ debt.name }}</div>
+                        <div style="font-size: 0.8125rem; color: var(--text-muted);">
+                            {{ debt.interest_rate / 100 }}% APR · Min {{ debt.minimum_payment_cents | cents_to_dollars }}/mo
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: right; margin-right: 1rem;">
+                <div class="transaction-amount outflow" style="font-size: 1.125rem;">
+                    {{ debt.current_balance_cents | cents_to_dollars }}
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">Current Balance</div>
+                <div class="progress-bar" style="width: 100px; margin-top: 0.25rem;">
+                    {% set paid = ((debt.initial_amount_cents - debt.current_balance_cents) / debt.initial_amount_cents * 100) | int %}
+                    <div class="progress-fill" style="width: {{ paid }}%; background: var(--success);"></div>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--success);">{{ paid }}% paid</div>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <a href="/debts/{{ debt.id }}" class="btn btn-secondary">Simulate</a>
+                <a href="/debts/{{ debt.id }}/edit" class="btn btn-ghost">Edit</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="grid grid-2">
+        <div class="card">
+            <h2 style="font-size: 1.125rem; margin: 0 0 1rem;">Debt Payoff Strategies</h2>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <h3 style="font-size: 0.9375rem; color: var(--text-secondary); margin: 0 0 0.5rem;">🎯 Avalanche Method</h3>
+                <p style="color: var(--text-muted); font-size: 0.875rem; margin: 0 0 0.75rem;">Pay highest interest rate first. Saves the most money.</p>
+                <a href="/debts/simulate/avalanche" class="btn btn-secondary">View Simulation</a>
+            </div>
+            
+            <div>
+                <h3 style="font-size: 0.9375rem; color: var(--text-secondary); margin: 0 0 0.5rem;">❄️ Snowball Method</h3>
+                <p style="color: var(--text-muted); font-size: 0.875rem; margin: 0 0 0.75rem;">Pay smallest balance first. Quick wins build momentum.</p>
+                <a href="/debts/simulate/snowball" class="btn btn-secondary">View Simulation</a>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2 style="font-size: 1.125rem; margin: 0 0 1rem;">Extra Payment Calculator</h2>
+            
+            <form hx-post="/debts/simulate/extra" hx-target="#extra-results" hx-swap="innerHTML">
+                <div class="form-group">
+                    <label class="form-label" for="extra_payment">Extra Monthly Payment</label>
+                    <input type="number" id="extra_payment" name="extra_payment" class="form-input" 
+                           step="0.01" min="0" placeholder="100.00" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Calculate Impact</button>
+            </form>
+            
+            <div id="extra-results" style="margin-top: 1rem;"></div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="empty-state">
+            <h3>No debts tracked</h3>
+            <p>Add your debts to see payoff projections and find the best elimination strategy.</p>
+            <a href="/debts/new" class="btn btn-primary">Add Your First Debt</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
