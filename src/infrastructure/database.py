@@ -34,13 +34,12 @@ engine_kwargs = {
     "pool_recycle": 300,
 }
 
-if "neon" in settings.database_url.lower():
-    engine_kwargs["connect_args"] = {
-        "ssl": "require",
-        "server_settings": {"application_name": "personal_finance"},
-    }
-elif "ssl" in settings.database_url.lower():
-    engine_kwargs["connect_args"] = {"ssl": "require"}
+db_url = settings.database_url
+if "neon" in db_url.lower():
+    db_url = db_url.replace("?sslmode=require", "").replace("&sslmode=require", "")
+    db_url = db_url.replace("sslmode=require", "")
+
+engine = create_async_engine(db_url, **engine_kwargs)
 
 engine = create_async_engine(settings.database_url, **engine_kwargs)
 async_session_maker = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
