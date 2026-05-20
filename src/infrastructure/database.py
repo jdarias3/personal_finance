@@ -35,13 +35,17 @@ engine_kwargs = {
 }
 
 db_url = settings.database_url
+
 if "neon" in db_url.lower():
-    db_url = db_url.replace("?sslmode=require", "").replace("&sslmode=require", "")
-    db_url = db_url.replace("sslmode=require", "")
+    if "?" in db_url:
+        base, query = db_url.split("?", 1)
+        params = [p for p in query.split("&") if not p.startswith("sslmode")]
+        db_url = base + ("?" + "&".join(params) if params else "")
+    else:
+        db_url = db_url.replace("sslmode=require", "")
+    engine_kwargs["connect_args"] = {"ssl": "prefer"}
 
 engine = create_async_engine(db_url, **engine_kwargs)
-
-engine = create_async_engine(settings.database_url, **engine_kwargs)
 async_session_maker = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
