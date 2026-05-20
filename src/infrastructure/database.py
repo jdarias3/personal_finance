@@ -32,15 +32,12 @@ engine_kwargs = {
     "max_overflow": 2,
     "pool_pre_ping": True,
     "pool_recycle": 300,
-    "connect_timeout": 10,
 }
 
 if "neon" in settings.database_url.lower():
     engine_kwargs["connect_args"] = {
         "ssl": "require",
         "server_settings": {"application_name": "personal_finance"},
-        "timeout": 10,
-        "command_timeout": 10,
     }
 elif "ssl" in settings.database_url.lower():
     engine_kwargs["connect_args"] = {"ssl": "require"}

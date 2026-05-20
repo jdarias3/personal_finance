@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from typing import Optional
 from uuid import UUID
 import structlog
+import os
 from passlib.context import CryptContext
 from jose import jwt
 from datetime import datetime, timedelta
@@ -16,7 +17,7 @@ router = APIRouter()
 logger = structlog.get_logger()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-SECRET_KEY = "your-secret-key-change-in-production"
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7
 
