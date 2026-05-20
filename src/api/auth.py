@@ -63,6 +63,51 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
     
     return user
 
+@router.post("/api/register")
+async def api_register(
+    request: Request,
+    name: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(...),
+    db: AsyncSession = Depends(get_db)
+):
+    from fastapi.responses import JSONResponse
+    
+    try:
+        existing = await db.execute(select(User).where(User.email == email))
+        if existing.scalar_one_or_none():
+            return JSONResponse(status_code=400, content={"detail": "Email already registered"})
+        
+        user = User(
+            email=email,
+            hashed_password=get_password_hash(password),
+            full_name=name,
+            is_active=True
+        )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+        
+        profile = UserProfile(
+            user_id=user.id,
+            profile_mode="financial-os"
+        )
+        db.add(profile)
+        await db.commit()
+        
+        access_token = create_access_token(data={"sub": str(user.id)})
+        
+        return JSONResponse(content={
+            "id": str(user.id),
+            "email": user.email,
+            "full_name": user.full_name,
+            "access_token": access_token,
+            "token_type": "bearer"
+        })
+    except Exception as e:
+        logger.error("api_register_error", error=str(e), email=email)
+        return JSONResponse(status_code=500, content={"detail": "Registration failed"})
+
 @router.post("/auth/register")
 async def register(
     request: Request,
@@ -116,6 +161,35 @@ async def register(
             media_type="text/html",
             status_code=500
         )
+
+@router.post("/api/login")
+async def api_login(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...),
+    db: AsyncSession = Depends(get_db)
+):
+    from fastapi.responses import JSONResponse
+    
+    try:
+        result = await db.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
+        
+        if not user or not verify_password(password, user.hashed_password):
+            return JSONResponse(status_code=401, content={"detail": "Invalid email or password"})
+        
+        if not user.is_active:
+            return JSONResponse(status_code=403, content={"detail": "Account is deactivated"})
+        
+        access_token = create_access_token(data={"sub": str(user.id)})
+        
+        return JSONResponse(content={
+            "access_token": access_token,
+            "token_type": "bearer"
+        })
+    except Exception as e:
+        logger.error("api_login_error", error=str(e), email=email)
+        return JSONResponse(status_code=500, content={"detail": "Login failed"})
 
 @router.post("/auth/login")
 async def login(

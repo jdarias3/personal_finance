@@ -175,7 +175,7 @@ class DebtEngineService:
                 debt_balances[debt.id] = max(0, debt_balances[debt.id] - principal)
                 
                 if debt_balances[debt.id] <= 0 and payoff_months[debt.id] is None:
-                    payoff_months[debt.id] = month
+                    payoff_months[debt.id] = month  # type: ignore[assignment]
                     rollover += debt.minimum_payment_cents
         
         projections = []

@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel
 from datetime import datetime, date
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 import structlog
 
@@ -267,7 +267,7 @@ async def list_transactions(
         offset=(page - 1) * 50
     )
     
-    transactions_with_category = []
+    transactions_with_category: list[dict[str, Any]] = []
     for t in transactions:
         cat_name = None
         if t.category_id:
@@ -282,7 +282,7 @@ async def list_transactions(
     
     from collections import defaultdict
     by_date = defaultdict(list)
-    for t in transactions_with_category:
+    for t in transactions_with_category:  # type: ignore[assignment]
         date_key = t['date'].strftime("%Y-%m-%d")
         by_date[date_key].append(t)
     
