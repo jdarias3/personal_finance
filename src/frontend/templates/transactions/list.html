@@ -7,11 +7,33 @@
     <div class="page-header">
         <h1 class="page-title">Transactions</h1>
         <div style="display: flex; gap: 0.75rem;">
-            <button class="btn btn-secondary" onclick="document.getElementById('import-form').classList.toggle('hidden')">
+            <button class="btn btn-secondary" onclick="showForm('import-form')">
                 Import CSV
+            </button>
+            <button class="btn btn-secondary" onclick="showForm('category-form')">
+                + Category
             </button>
             <a href="/transactions/new" class="btn btn-primary">+ Add Transaction</a>
         </div>
+    </div>
+    
+    <script>
+    function showForm(id) {
+        document.getElementById('import-form').style.display = 'none';
+        document.getElementById('category-form').style.display = 'none';
+        document.getElementById(id).style.display = 'block';
+    }
+    </script>
+    
+    <div id="category-form" class="card" style="margin-bottom: 1.5rem; display: none;">
+        <h3 style="margin: 0 0 1rem;">New Category</h3>
+        <form action="/categories/new" method="post">
+            <div class="form-group">
+                <label class="form-label" for="cat_name">Name</label>
+                <input type="text" id="cat_name" name="name" class="form-input" required placeholder="e.g., Groceries">
+            </div>
+            <button type="submit" class="btn btn-primary">Create Category</button>
+        </form>
     </div>
     
     <div id="import-form" class="card hidden" style="margin-bottom: 1.5rem; display: none;">
@@ -52,6 +74,15 @@
                     {% endfor %}
                 </select>
             </div>
+            <div class="form-group" style="margin: 0;">
+                <label class="form-label" for="category_filter">Category</label>
+                <select id="category_filter" name="category_id" class="form-select">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if current_category == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
             <button type="submit" class="btn btn-secondary">Filter</button>
             <a href="/transactions" class="btn btn-ghost">Clear</a>
         </form>
@@ -61,7 +92,7 @@
     <div class="card">
         {% for date, txns in transactions_by_date.items() %}
         <div style="padding: 1rem 0; border-bottom: 1px solid var(--border);">
-            <div style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 0.75rem;">{{ date | format_date }}</div>
+            <div style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 0.75rem;">{{ date.split('-')[1] + '/' + date.split('-')[2] + '/' + date.split('-')[0] }}</div>
             {% for txn in txns %}
             <div class="list-item" style="padding: 0.5rem 0;">
                 <div style="flex: 1;">

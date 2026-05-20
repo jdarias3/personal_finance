@@ -9,7 +9,7 @@
     </div>
     
     <div class="card" style="max-width: 500px;">
-        <form action="{{ '/accounts/' + account.id + '/edit' if account else '/accounts/new' }}" method="post">
+        <form action="{{ '/accounts/' + (account.id | string) + '/edit' if account else '/accounts/new' }}" method="post">
             <div class="form-group">
                 <label class="form-label" for="name">Account Name</label>
                 <input type="text" id="name" name="name" class="form-input" 
@@ -51,12 +51,14 @@
                     {{ 'Save Changes' if account else 'Add Account' }}
                 </button>
                 <a href="/accounts" class="btn btn-secondary">Cancel</a>
-                {% if account %}
-                <a href="/accounts/{{ account.id }}/delete" class="btn btn-danger" 
-                   onclick="return confirm('Are you sure? This will delete all transactions.')">Delete</a>
-                {% endif %}
             </div>
         </form>
+        
+        {% if account %}
+        <form id="delete-form" action="/accounts/{{ account.id | string }}/delete" method="post" style="display: none;"></form>
+        <button type="button" class="btn btn-danger" style="margin-top: 0.75rem;"
+                onclick="if(confirm('Are you sure? This will delete all transactions.')) { document.getElementById('delete-form').submit(); }">Delete Account</button>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

@@ -28,12 +28,21 @@ settings = create_settings()
 engine_kwargs = {
     "echo": settings.environment == "development",
     "poolclass": AsyncAdaptedQueuePool,
-    "pool_size": 5,
-    "max_overflow": 10,
+    "pool_size": 1,
+    "max_overflow": 2,
     "pool_pre_ping": True,
+    "pool_recycle": 300,
+    "connect_timeout": 10,
 }
 
-if "ssl" in settings.database_url.lower() or "neon" in settings.database_url.lower():
+if "neon" in settings.database_url.lower():
+    engine_kwargs["connect_args"] = {
+        "ssl": "require",
+        "server_settings": {"application_name": "personal_finance"},
+        "timeout": 10,
+        "command_timeout": 10,
+    }
+elif "ssl" in settings.database_url.lower():
     engine_kwargs["connect_args"] = {"ssl": "require"}
 
 engine = create_async_engine(settings.database_url, **engine_kwargs)
@@ -41,5 +50,13 @@ async_session_maker = async_sessionmaker(engine, class_=AsyncSession, expire_on_
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    async with async_session_maker() as session:
-        yield session
+    try:
+        async with async_session_maker() as session:
+            yield session
+    except Exception as e:
+        error_msg = str(e).lower()
+        if "connection" in error_msg or "disconnect" in error_msg or "timeout" in error_msg:
+            async with async_session_maker() as session:
+                yield session
+        else:
+            raise

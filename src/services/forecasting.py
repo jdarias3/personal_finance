@@ -124,7 +124,7 @@ class ForecastingService:
         
         current_balance = 0
         for acc in accounts:
-            if acc.account_type.value in ["checking", "savings", "cash"]:
+            if acc.account_type in ["checking", "savings", "cash"]:
                 q = select(Transaction).where(
                     Transaction.account_id == acc.id
                 ).order_by(Transaction.date.desc(), Transaction.created_at.desc()).limit(1)
@@ -167,7 +167,7 @@ class ForecastingService:
         
         total_balance = 0
         for acc in accounts:
-            if acc.account_type.value in ["checking", "savings", "cash"]:
+            if acc.account_type in ["checking", "savings", "cash"]:
                 q = select(Transaction).where(
                     Transaction.account_id == acc.id
                 ).order_by(Transaction.date.desc(), Transaction.created_at.desc()).limit(1)

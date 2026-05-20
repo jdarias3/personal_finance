@@ -31,7 +31,7 @@ class RegisterForm(BaseModel):
 @router.get("/", response_class=HTMLResponse)
 async def index(request: Request, db: AsyncSession = Depends(get_db)):
     user = request.state.user if hasattr(request.state, 'user') else None
-    return render_template("index.html", {"user": user})
+    return render_template("index.html", {"user": user, "request": request})
 
 @router.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request, db: AsyncSession = Depends(get_db)):
@@ -116,7 +116,7 @@ async def list_accounts(request: Request, db: AsyncSession = Depends(get_db)):
         accounts_with_balance.append({
             'id': acc.id,
             'name': acc.name,
-            'account_type': acc.account_type.value,
+            'account_type': acc.account_type,
             'institution': acc.institution,
             'balance': balance
         })
@@ -224,13 +224,18 @@ async def delete_account(request: Request, account_id: UUID, db: AsyncSession = 
     if not user:
         raise HTTPException(status_code=401)
     
-    ledger = FinancialLedgerService(db)
-    account = await ledger.get_account(account_id, user.id)
-    
-    await db.delete(account)
-    await db.commit()
-    
-    return RedirectResponse("/accounts", status_code=303)
+    try:
+        ledger = FinancialLedgerService(db)
+        account = await ledger.get_account(account_id, user.id)
+        
+        await db.delete(account)
+        await db.commit()
+        
+        return RedirectResponse("/accounts", status_code=303)
+    except Exception as e:
+        await db.rollback()
+        logger.error("delete_account_error", error=str(e), account_id=str(account_id))
+        raise HTTPException(status_code=500, detail=f"Could not delete account: {e}")
 
 from src.domain.models import Category
 
@@ -238,6 +243,7 @@ from src.domain.models import Category
 async def list_transactions(
     request: Request,
     account_id: Optional[UUID] = None,
+    category_id: Optional[UUID] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     page: int = 1,
@@ -249,10 +255,12 @@ async def list_transactions(
     
     ledger = FinancialLedgerService(db)
     accounts = await ledger.list_accounts(user.id)
+    categories = await ledger.list_categories(user.id)
     
     transactions = await ledger.get_transactions(
         user.id,
         account_id=account_id,
+        category_id=category_id,
         start_date=start_date,
         end_date=end_date,
         limit=50,
@@ -276,7 +284,7 @@ async def list_transactions(
     by_date = defaultdict(list)
     for t in transactions_with_category:
         date_key = t['date'].strftime("%Y-%m-%d")
-        by_date[date_key] = t
+        by_date[date_key].append(t)
     
     accounts_list = [{'id': a.id, 'name': a.name} for a in accounts]
     
@@ -286,6 +294,8 @@ async def list_transactions(
         "transactions": transactions_with_category,
         "transactions_by_date": dict(by_date),
         "accounts": accounts_list,
+        "categories": [{'id': c.id, 'name': c.name} for c in categories],
+        "current_category": str(category_id) if category_id else "",
         "start_date": start_date.isoformat() if start_date else "",
         "end_date": end_date.isoformat() if end_date else "",
         "current_account": str(account_id) if account_id else "",
@@ -322,6 +332,7 @@ async def create_transaction(
     payee: Optional[str] = Form(None),
     category_id: Optional[UUID] = Form(None),
     notes: Optional[str] = Form(None),
+    new_category_name: Optional[str] = Form(None),
     db: AsyncSession = Depends(get_db)
 ):
     user = request.state.user if hasattr(request.state, 'user') else None
@@ -331,6 +342,10 @@ async def create_transaction(
     ledger = FinancialLedgerService(db)
     from src.domain.models import TransactionType
     txn_type = TransactionType.INFLOW if transaction_type == 'inflow' else TransactionType.OUTFLOW
+    
+    if new_category_name:
+        new_cat = await ledger.create_category(user.id, new_category_name)
+        category_id = new_cat.id
     
     await ledger.record_transaction(
         user_id=user.id,
@@ -372,3 +387,20 @@ async def delete_transaction(request: Request, transaction_id: UUID, db: AsyncSe
     await ledger.reverse_transaction(transaction_id, user.id, "User deleted")
     
     return RedirectResponse("/transactions", status_code=303)
+
+@router.post("/categories/new")
+async def create_category(
+    request: Request,
+    name: str = Form(...),
+    icon: Optional[str] = Form(None),
+    color: Optional[str] = Form(None),
+    db: AsyncSession = Depends(get_db)
+):
+    user = request.state.user if hasattr(request.state, 'user') else None
+    if not user:
+        raise HTTPException(status_code=401)
+    
+    ledger = FinancialLedgerService(db)
+    await ledger.create_category(user.id, name, icon, color)
+    
+    return RedirectResponse(request.headers.get("referer", "/transactions"), status_code=303)

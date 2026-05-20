@@ -21,12 +21,24 @@
             </div>
             
             <div class="form-group">
-                <label class="form-label" for="transaction_type">Type</label>
-                <select id="transaction_type" name="transaction_type" class="form-select" required>
-                    <option value="outflow" {% if transaction and transaction.transaction_type == 'outflow' %}selected{% endif %}>Expense (money out)</option>
-                    <option value="inflow" {% if transaction and transaction.transaction_type == 'inflow' %}selected{% endif %}>Income (money in)</option>
-                </select>
+                <label class="form-label">Type</label>
+                <input type="hidden" id="transaction_type" name="transaction_type" value="{{ 'outflow' if transaction and transaction.transaction_type == 'outflow' else 'inflow' if transaction and transaction.transaction_type == 'inflow' else 'outflow' }}">
+                <div style="display: flex; gap: 0.75rem;">
+                    <button type="button" class="btn" id="btn-outflow"
+                            style="border: 1px solid #ccc; padding: 0.5rem 1rem; background: {% if transaction and transaction.transaction_type == 'outflow' or not transaction %}#dc3545; color: white;{% else %}white;{% endif %}"
+                            onclick="selectType('outflow')">Expense</button>
+                    <button type="button" class="btn" id="btn-inflow"
+                            style="border: 1px solid #ccc; padding: 0.5rem 1rem; background: {% if transaction and transaction.transaction_type == 'inflow' %}#28a745; color: white;{% else %}white;{% endif %}"
+                            onclick="selectType('inflow')">Income</button>
+                </div>
             </div>
+            <script>
+            function selectType(type) {
+                document.getElementById('transaction_type').value = type;
+                document.getElementById('btn-outflow').style = type === 'outflow' ? 'border: 1px solid #ccc; padding: 0.5rem 1rem; background: #dc3545; color: white;' : 'border: 1px solid #ccc; padding: 0.5rem 1rem; background: white;';
+                document.getElementById('btn-inflow').style = type === 'inflow' ? 'border: 1px solid #ccc; padding: 0.5rem 1rem; background: #28a745; color: white;' : 'border: 1px solid #ccc; padding: 0.5rem 1rem; background: white;';
+            }
+            </script>
             
             <div class="form-group">
                 <label class="form-label" for="amount">Amount</label>
@@ -56,12 +68,22 @@
             
             <div class="form-group">
                 <label class="form-label" for="category_id">Category</label>
-                <select id="category_id" name="category_id" class="form-select">
-                    <option value="">Uncategorized</option>
-                    {% for category in categories %}
-                    <option value="{{ category.id }}" {% if transaction and transaction.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
-                    {% endfor %}
-                </select>
+                <div style="display: flex; gap: 0.5rem;">
+                    <select id="category_id" name="category_id" class="form-select" style="flex: 1;">
+                        <option value="">Uncategorized</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if transaction and transaction.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('new-category-form').classList.toggle('hidden')">+</button>
+                </div>
+            </div>
+            <div id="new-category-form" class="form-group hidden" style="display: none;">
+                <label class="form-label" for="new_cat_name">New Category Name</label>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" id="new_cat_name" name="new_category_name" class="form-input" placeholder="Category name">
+                    <input type="hidden" name="create_category" value="1">
+                </div>
             </div>
             
             <div class="form-group">

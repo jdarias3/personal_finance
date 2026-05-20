@@ -13,10 +13,13 @@ env = Environment(
 def setup_jinja_env(app):
     from fastapi import Request
     
-    def cents_to_dollars(value: int) -> str:
+    def cents_to_dollars(value) -> str:
         if value is None:
             return "$0.00"
-        return f"${abs(value) / 100:,.2f}"
+        try:
+            return f"${abs(int(value)) / 100:,.2f}"
+        except (ValueError, TypeError):
+            return "$0.00"
     
     def format_date(value: date) -> str:
         if value is None:
