@@ -510,3 +510,140 @@ async def setup_profile(
     await db.commit()
     
     return RedirectResponse("/dashboard", status_code=303)
+
+# --- JSON API endpoints for iOS ---
+
+@router.get("/api/debts")
+async def api_list_debts(request: Request, db: AsyncSession = Depends(get_db)):
+    from fastapi.responses import JSONResponse
+    user = request.state.user if hasattr(request.state, 'user') else None
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
+    
+    debt_svc = DebtEngineService(db)
+    summary = await debt_svc.get_debt_summary(user.id)
+    debts = await debt_svc.get_debts(user.id)
+    
+    debts_json = [
+        {
+            "id": str(d.id),
+            "user_id": str(d.user_id),
+            "account_id": str(d.account_id) if d.account_id else None,
+            "name": d.name,
+            "initial_amount_cents": d.initial_amount_cents,
+            "current_balance_cents": d.current_balance_cents,
+            "interest_rate": d.interest_rate,
+            "minimum_payment_cents": d.minimum_payment_cents,
+            "due_day": d.due_day,
+            "created_at": d.created_at.isoformat(),
+            "updated_at": d.updated_at.isoformat(),
+        }
+        for d in debts
+    ]
+    
+    return JSONResponse(content={
+        "debts": debts_json,
+        "summary": {
+            "total_debt_cents": summary.total_debt_cents,
+            "total_minimum_payment_cents": summary.total_minimum_payment_cents,
+            "weighted_avg_rate": summary.weighted_avg_rate,
+            "debt_count": summary.debt_count,
+        }
+    })
+
+@router.post("/api/debts/new")
+async def api_create_debt(
+    request: Request,
+    name: str = Form(...),
+    initial_amount: float = Form(...),
+    current_balance: float = Form(...),
+    interest_rate: float = Form(...),
+    minimum_payment: float = Form(...),
+    due_day: Optional[int] = Form(None),
+    account_id: Optional[UUID] = Form(None),
+    db: AsyncSession = Depends(get_db)
+):
+    from fastapi.responses import JSONResponse
+    user = request.state.user if hasattr(request.state, 'user') else None
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
+    
+    debt_svc = DebtEngineService(db)
+    debt = await debt_svc.create_debt(
+        user_id=user.id,
+        name=name,
+        initial_amount_cents=int(initial_amount * 100),
+        current_balance_cents=int(current_balance * 100),
+        interest_rate=int(interest_rate * 100),
+        minimum_payment_cents=int(minimum_payment * 100),
+        due_day=due_day,
+        account_id=account_id,
+    )
+    
+    return JSONResponse(content={
+        "id": str(debt.id),
+        "name": debt.name,
+        "initial_amount_cents": debt.initial_amount_cents,
+        "current_balance_cents": debt.current_balance_cents,
+        "interest_rate": debt.interest_rate,
+        "minimum_payment_cents": debt.minimum_payment_cents,
+    })
+
+@router.post("/api/debts/{debt_id}/delete")
+async def api_delete_debt(request: Request, debt_id: UUID, db: AsyncSession = Depends(get_db)):
+    from fastapi.responses import JSONResponse
+    user = request.state.user if hasattr(request.state, 'user') else None
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
+    
+    debt_svc = DebtEngineService(db)
+    debt = await debt_svc.get_debts(user.id)
+    for d in debt:
+        if d.id == debt_id:
+            await db.delete(d)
+            await db.commit()
+            return JSONResponse(content={"detail": "Deleted"})
+    
+    return JSONResponse(status_code=404, content={"detail": "Debt not found"})
+
+@router.post("/api/debts/{debt_id}/project")
+async def api_project_debt(
+    request: Request,
+    debt_id: UUID,
+    monthly_payment: Optional[float] = Form(None),
+    extra_payment: Optional[float] = Form(0),
+    db: AsyncSession = Depends(get_db)
+):
+    from fastapi.responses import JSONResponse
+    user = request.state.user if hasattr(request.state, 'user') else None
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
+    
+    debt_svc = DebtEngineService(db)
+    projection = await debt_svc.project_payoff(
+        debt_id=debt_id,
+        monthly_payment_cents=int(monthly_payment * 100) if monthly_payment else None,
+        extra_payment_cents=int(extra_payment * 100),
+    )
+    
+    if not projection:
+        return JSONResponse(status_code=404, content={"detail": "Debt not found"})
+    
+    return JSONResponse(content={
+        "debt_id": str(projection.debt_id),
+        "name": projection.name,
+        "months_to_payoff": projection.months_to_payoff,
+        "total_interest_cents": projection.total_interest_cents,
+        "total_cost_cents": projection.total_cost_cents,
+        "payoff_date": projection.payoff_date.isoformat(),
+        "monthly_schedule": [
+            {
+                "month": row["month"],
+                "payment_cents": row["payment_cents"],
+                "interest_cents": row["interest_cents"],
+                "principal_cents": row["principal_cents"],
+                "balance_cents": row["balance_cents"],
+            }
+            for row in projection.monthly_schedule
+        ],
+    })

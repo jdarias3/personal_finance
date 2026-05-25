@@ -23,11 +23,17 @@ struct ContentView: View {
                 }
                 .tag(2)
 
+            DebtsView()
+                .tabItem {
+                    Label("Debts", systemImage: "creditcard.and.123")
+                }
+                .tag(3)
+
             SettingsView()
                 .tabItem {
                     Label("Settings", systemImage: "gear")
                 }
-                .tag(3)
+                .tag(4)
         }
     }
 }

@@ -139,7 +139,40 @@ class ApiService {
         return try await post("/categories/new", body: request)
     }
 
-    // MARK: - Private HTTP Methods
+    // MARK: - Debts
+
+    func getDebts(page: Int = 1) async throws -> [Debt] {
+        let response: DebtsResponse = try await get("/api/debts")
+        return response.debts
+    }
+
+    func getDebtSummary() async throws -> DebtSummary {
+        let response: DebtsResponse = try await get("/api/debts")
+        return response.summary
+    }
+
+    func createDebt(name: String, initialAmount: Double, currentBalance: Double, interestRate: Double, minimumPayment: Double, dueDay: Int?, accountId: UUID?) async throws -> Debt {
+        var body = "name=\(name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")&initial_amount=\(initialAmount)&current_balance=\(currentBalance)&interest_rate=\(interestRate)&minimum_payment=\(minimumPayment)"
+        if let dueDay = dueDay { body += "&due_day=\(dueDay)" }
+        if let accountId = accountId { body += "&account_id=\(accountId.uuidString)" }
+        let _: EmptyResponse = try await postForm("/api/debts/new", body: body)
+        return try await getDebts().first ?? Debt(
+            id: UUID(), userId: UUID(), accountId: nil, name: name,
+            initialAmountCents: Int(initialAmount), currentBalanceCents: Int(currentBalance),
+            interestRate: Int(interestRate), minimumPaymentCents: Int(minimumPayment),
+            dueDay: dueDay, createdAt: Date(), updatedAt: Date()
+        )
+    }
+
+    func deleteDebt(id: UUID) async throws {
+        let _: EmptyResponse = try await post("/api/debts/\(id.uuidString)/delete", body: EmptyBody())
+    }
+
+    func getPayoffProjection(debtId: UUID, monthlyPayment: Double? = nil, extraPayment: Double = 0) async throws -> PayoffProjection {
+        var body = "extra_payment=\(extraPayment)"
+        if let mp = monthlyPayment { body += "&monthly_payment=\(mp)" }
+        return try await postForm("/api/debts/\(debtId.uuidString)/project", body: body)
+    }
 
     private func get<T: Decodable>(_ path: String) async throws -> T {
         guard let url = URL(string: baseURL + path) else {
@@ -249,6 +282,11 @@ class ApiService {
             throw ApiError.networkError(error)
         }
     }
+}
+
+struct DebtsResponse: Decodable {
+    let debts: [Debt]
+    let summary: DebtSummary
 }
 
 struct EmptyBody: Encodable {}
